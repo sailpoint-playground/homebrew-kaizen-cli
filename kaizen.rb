@@ -1,4 +1,4 @@
-cask "kaizen" do
+cask "kaizen-cli" do
   version "0.1.0"
   sha256 "93d0f64fc93d8580e96b405fb1905d43f5e98788c6c99df3976e6350637a3d32"
 
