@@ -1,23 +1,40 @@
 name: Create Release
 
 on:
-  # This section allows you to trigger the workflow manually
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
         description: 'SemVer version to use for the release (e.g., 1.0.4)'
         required: true
         default: ''
-  # The tags push trigger remains for automated releases
-  push:
-    tags:
-      - "v*"
 
 permissions:
   contents: write
 
 jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          body: |
+            Release notes for ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
+    needs: [create_release]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -43,18 +60,14 @@ jobs:
 
       - name: Build
         run: |
-          CGO_ENABLED=0 GOOS=${{ matrix.os == 'ubuntu-latest' && 'linux' || 'darwin' }} GOARCH=${{ matrix.goarch }} go build -o kaizen-cli-${{ matrix.target }} .
-      
-      - name: Rename for Release
-        run: |
-          mv kaizen-cli-${{ matrix.target }} kaizen-cli-${{ matrix.target }}
+          GOOS=${{ matrix.target == 'linux-amd64' && 'linux' || matrix.target == 'darwin-amd64' && 'darwin' || 'linux' }} GOARCH=${{ matrix.goarch }} go build -o kaizen-cli-${{ matrix.target }} .
       
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./kaizen-cli-${{ matrix.target }}
           asset_name: kaizen-cli-${{ matrix.target }}
           asset_content_type: application/octet-stream
