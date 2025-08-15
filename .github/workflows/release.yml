@@ -1,13 +1,11 @@
-name: Create Release
+name: Manual Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  # This section allows you to trigger the workflow manually
   workflow_dispatch:
     inputs:
       version:
-        description: 'SemVer version to use for the release (e.g., 1.0.4)'
+        description: 'SemVer version to use for the release (e.g., v1.0.4)'
         required: true
         default: ''
 
@@ -20,20 +18,16 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - name: Extract Tag Name
-        id: get_tag
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-      
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ env.TAG_NAME }}
-          release_name: Release ${{ env.TAG_NAME }}
+          tag_name: ${{ github.event.inputs.version }}
+          release_name: Release ${{ github.event.inputs.version }}
           draft: false
           prerelease: false
           body: |
-            Release notes for ${{ env.TAG_NAME }}
+            Release created from manual run for version ${{ github.event.inputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
