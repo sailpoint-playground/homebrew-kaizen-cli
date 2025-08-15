@@ -1,6 +1,14 @@
 name: Create Release
 
 on:
+  # This section allows you to trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'SemVer version to use for the release (e.g., 1.0.4)'
+        required: true
+        default: ''
+  # The tags push trigger remains for automated releases
   push:
     tags:
       - "v*"
@@ -10,7 +18,22 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goarch: amd64
+            target: linux-amd64
+          - os: macos-latest
+            goarch: amd64
+            target: darwin-amd64
+          - os: ubuntu-latest
+            goarch: arm64
+            target: linux-arm64
+          - os: macos-latest
+            goarch: arm64
+            target: darwin-arm64
     steps:
       - uses: actions/checkout@v3
       - name: Set up Go
@@ -20,15 +43,18 @@ jobs:
 
       - name: Build
         run: |
-          go build -o kaizen .
-
-      - name: Create Release
-        uses: actions/create-release@v1
+          CGO_ENABLED=0 GOOS=${{ matrix.os == 'ubuntu-latest' && 'linux' || 'darwin' }} GOARCH=${{ matrix.goarch }} go build -o kaizen-cli-${{ matrix.target }} .
+      
+      - name: Rename for Release
+        run: |
+          mv kaizen-cli-${{ matrix.target }} kaizen-cli-${{ matrix.target }}
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Release notes for ${{ github.ref }}
-          draft: false
-          prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./kaizen-cli-${{ matrix.target }}
+          asset_name: kaizen-cli-${{ matrix.target }}
+          asset_content_type: application/octet-stream
