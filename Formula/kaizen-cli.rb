@@ -1,5 +1,5 @@
 # This is an auto-generated file. DO NOT EDIT
-class Kaizen < Formula
+class KaizenCli < Formula
     desc "Application lifecycle orchestration"
     homepage "https://kaizen.sailpoint.com/"
     version "v1.0.3"
