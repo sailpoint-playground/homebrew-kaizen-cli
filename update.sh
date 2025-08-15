@@ -13,7 +13,7 @@ BREW_VERSION="$3"
 
 if [ "${CLI_NAME}" = "kaizen-cli" ]; then
   URL_BASE="https://github.com/sailpoint-playground/kaizen-cli/releases/download"
-  CLASSNAME="Kaizen"
+  CLASSNAME="KaizenCli"
   DESC="Application lifecycle orchestration"
 else
   echo "Unsupported binary: ${CLI_NAME}"
